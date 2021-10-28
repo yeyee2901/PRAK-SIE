@@ -1,0 +1,3 @@
+"0","cheby2_10000Hz <- time_domain_10000Hz %>%"
+"0","  dplyr::select(TIME, Vin, Chebychev2) %>%"
+"0","  dplyr::filter(TIME * 1000 < 2)"

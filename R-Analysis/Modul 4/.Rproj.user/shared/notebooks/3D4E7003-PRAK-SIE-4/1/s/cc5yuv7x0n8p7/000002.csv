@@ -1,0 +1,4 @@
+"0","bessel2_1000Hz <- bessel2_1000Hz %>%"
+"0","  dplyr::filter( TIME * 1000 > 2.5)"
+"0",""
+"0","vpeak <- max(bessel2_1000Hz$Bessel2)"

@@ -1,0 +1,2 @@
+"0","cheby3_100Hz <- time_domain_100Hz %>%"
+"0","  dplyr::select(TIME, Vin, Chebychev3)"

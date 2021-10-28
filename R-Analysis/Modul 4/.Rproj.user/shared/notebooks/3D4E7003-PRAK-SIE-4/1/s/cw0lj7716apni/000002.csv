@@ -1,0 +1,6 @@
+"0","cheby2_freq_plot +"
+"0","  geom_point(aes(x = freq_at_ripple, y = ripple), color = ""black"", "
+"0","             shape = 4, size = 5) +"
+"0","  annotate(""text"", x = freq_at_ripple + 1200, y = ripple + 8,"
+"0","           label = ""(1584.893, 2.96181)"") +"
+"0","  labs(title = ""Lokasi peak ripple Chebychev HPF orde 2"")"

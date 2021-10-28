@@ -1,0 +1,251 @@
+---
+title: "PrakSIE-5"
+author: "Gabriel SH"
+date: "9/27/2021"
+output:
+  pdf_document:
+    highlight: espresso
+    toc: yes
+    toc_depth: 3
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+```{r libraries, message=FALSE, error=FALSE, warning=FALSE, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+```
+
+# Importing Data
+- Read time domain data for wide bandpass filter.
+```{r echo=TRUE, message=FALSE}
+wide_bpf_fL <- read.csv("Exports/Wide_BPF_fL.csv")
+wide_bpf_fR <- read.csv("Exports/Wide_BPF_fR.csv")
+wide_bpf_fH <- read.csv("Exports/Wide_BPF_fH.csv")
+```
+- Read time domain data for narrow bandpass filter & notch filter
+```{r}
+notch_narrow_fL <- read.csv("Exports/Notch_Narrow_fL.csv")
+notch_narrow_fR <- read.csv("Exports/Notch_Narrow_fR.csv")
+notch_narrow_fH <- read.csv("Exports/Notch_Narrow_fH.csv")
+```
+
+
+\newpage
+# 5.1 Wide Bandpass Filter
+## 5.1.1 F = Cutoff Lower = 300 Hz
+```{r}
+peak <- max(wide_bpf_fL$WideBPF)
+ggplot(wide_bpf_fL) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = WideBPF, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Wide Bandpass Filter Butterworth",
+       subtitle = "Frekuensi input = lower cutoff = 300 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```
+
+\newpage
+## 5.1.2 F = Resonance Frequency = 948.68 Hz
+```{r}
+peak <- max(wide_bpf_fR$WideBPF)
+p1 <- ggplot(wide_bpf_fR) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = WideBPF, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  xlab("")
+
+p2 <- ggplot(wide_bpf_fR) +
+  geom_line(aes(x = TIME * 1000, y = WideBPF), color = "blue") +
+  xlab("Time (ms)")
+  
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Wide Bandpass Filter Butterworth",
+                  subtitle = "Frekuensi input = Resonance = 948.68 Hz") &
+  ylab("Voltage (V)")
+```
+
+
+\newpage
+## 5.1.3 F = Cutoff Higher = 3000 Hz
+```{r}
+peak <- max(wide_bpf_fH$WideBPF)
+ggplot(wide_bpf_fH) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = WideBPF, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Wide Bandpass Filter Butterworth",
+       subtitle = "Frekuensi input = higher cutoff = 3000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```
+
+
+\newpage
+# 5.2 Narrow Bandpass Filter
+## 5.2.1 F = 900 Hz
+```{r}
+peak <- notch_narrow_fL %>%
+  dplyr::filter(TIME * 1000 > 10) %>%
+  dplyr::select(NarrowBPF) %>%
+  max()
+
+ggplot(notch_narrow_fL) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = NarrowBPF, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Narrow Bandpass Filter",
+       subtitle = "Frekuensi input = lower cutoff = 900 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```
+
+
+
+\newpage
+## 5.2.2 F = 1000 Hz
+```{r}
+peak <- notch_narrow_fR %>%
+  dplyr::filter(TIME * 1000 > 10) %>%
+  dplyr::select(NarrowBPF) %>%
+  max()
+
+ggplot(notch_narrow_fR) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = NarrowBPF, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Narrow Bandpass Filter",
+       subtitle = "Frekuensi input = resonance = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```
+
+
+\newpage
+## 5.2.3 F = 1100 Hz
+```{r}
+peak <- notch_narrow_fH %>%
+  dplyr::filter(TIME * 1000 > 6) %>%
+  dplyr::select(NarrowBPF) %>%
+  max()
+
+ggplot(notch_narrow_fH) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = NarrowBPF, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Narrow Bandpass Filter",
+       subtitle = "Frekuensi input = higher cutoff = 1100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```
+
+
+
+\newpage
+# 5.3 Notch Filter
+## 5.3.1 F = 900 Hz
+```{r}
+peak <- notch_narrow_fL %>%
+  dplyr::filter(TIME * 1000 > 10) %>%
+  dplyr::select(Notch) %>%
+  max()
+
+ggplot(notch_narrow_fL) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Notch, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Notch Filter",
+       subtitle = "Frekuensi input = 900 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```
+
+\newpage
+## 5.3.1 F = 1000 Hz
+```{r}
+peak <- notch_narrow_fR %>%
+  dplyr::filter(TIME * 1000 > 10) %>%
+  dplyr::select(Notch) %>%
+  max()
+
+ggplot(notch_narrow_fR) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Notch, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Notch Filter",
+       subtitle = "Frekuensi input = Notch frequency = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```
+
+
+\newpage
+## 5.3.1 F = 1100 Hz
+```{r}
+peak <- notch_narrow_fH %>%
+  dplyr::filter(TIME * 1000 > 6) %>%
+  dplyr::select(Notch) %>%
+  max()
+
+ggplot(notch_narrow_fH) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Notch, color = "Vout")) +
+  geom_hline(aes(yintercept = peak, color = "Peak"), linetype = 4) +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue", 
+                                "Peak" = "dark green"),
+                     labels = c("Vin", "Vout", paste("Vpeak = ", peak, " V"))) +
+  labs(title = "Notch Filter",
+       subtitle = "Frekuensi input = 1100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)")
+```

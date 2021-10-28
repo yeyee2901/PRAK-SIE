@@ -1,0 +1,46 @@
+---
+title: "Praktikum SIE - Modul 3"
+author: "Gabriel SH"
+date: "9/15/2021"
+output:
+  pdf_document: 
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=FALSE}
+library(lemon)
+library(tidyverse)
+library(ggplot2)
+```
+
+# 3.1 Lowpass Filter Orde 2
+## 3.1.2 Frequency Response
+```{r, include=FALSE, message=FALSE, warning=FALSE, error=FALSE}
+LPF_orde2_freq = read_csv("CSV/LPF_Orde2.csv")
+```
+
+$$
+F_{Cutoff} = 1000 Hz
+$$
+```{r}
+ggplot(LPF_orde2_freq) +
+  scale_x_log10() +
+  labs(
+    title = "Perbandingan Lowpass Filter Orde 2",
+    subtitle = "Cutoff = 1 kHz"
+  ) +
+  ylab("Magnitude (dB)") +
+  xlab("Frequency (Hz)") +
+  geom_line(aes(FREQ, Cheby_2, color = "Cheby")) +
+  geom_line(aes(FREQ, Bessel_2, color = "Bessel")) +
+  geom_line(aes(FREQ, Butter_2, color = "Butterworth")) +
+  geom_hline(aes(yintercept=-3, color = "-3 dB"), linetype = 2) +
+  geom_vline(aes(xintercept=1000, color = "Cutoff"), linetype = 1) +
+  theme_linedraw()
+```
+

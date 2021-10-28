@@ -1,0 +1,1900 @@
+---
+title: "Sistem Instrumentasi Elektronika - Modul 4"
+author: "Gabriel SH"
+output: 
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+    highlight: espresso
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+# Libraries
+```{r libraries, message=FALSE, error=FALSE, warning=FALSE}
+library(ggplot2)    # Plotting
+library(patchwork)  # Plotting extension
+library(tidyverse)  # Table operations
+```
+
+# Read Exported Data
+```{r read_data, message=FALSE, warning=FALSE, error=FALSE ,echo=TRUE}
+freq_resp <- read.csv("Exports/HPF_FreqResponse.csv")
+time_domain_10Hz <- read_csv("Exports/HPF_10Hz.csv")
+time_domain_100Hz <- read_csv("Exports/HPF_100Hz.csv")
+time_domain_1000Hz <- read_csv("Exports/HPF_1000Hz.csv")
+time_domain_10000Hz <- read_csv("Exports/HPF_10000Hz.csv")
+```
+
+# Global Variables
+```{r}
+CUTOFF <- 1000  # cutoff 1000 Hz
+MAG_3dB <- -3   # -3dB point
+```
+
+
+\newpage
+# 4.1 Filter Orde 2
+**Mengambil data filter orde 2**.
+```{r}
+freq_resp_2 <- freq_resp %>%
+  dplyr::select(FREQ, Butterworth2, Bessel2, Chebychev2)
+```
+
+
+## 4.1.1 Butterworth
+
+
+### 4.1.1 a) Frequency Response
+Mengambil data untuk respon frekuensi Butterworth orde 2 saja.
+```{r}
+butter2_freq <- freq_resp_2 %>%
+  dplyr::select(FREQ, Butterworth2)
+```
+
+Respon Frekuensi High Pass Filter Butterworth Orde 2
+```{r}
+ggplot(butter2_freq) +
+  geom_line(aes(x = FREQ, y = Butterworth2, color = "butter2")) +
+  geom_vline(aes(xintercept = CUTOFF, color = "Cutoff"), linetype = 2) + 
+  geom_hline(aes(yintercept = MAG_3dB, color = "3dB"), linetype = 2) + 
+  geom_point(aes(x = CUTOFF, y = MAG_3dB)) +
+  
+  # Skala log
+  scale_x_log10() +
+  
+  # Plot info
+  labs(title = "Butterworth High Pass Filter - Orde 2",
+       subtitle = "Frekuensi Cutoff = 1000Hz",
+       x = "Frekuensi (Hz)",
+       y = "Gain (dB)") +
+  scale_color_manual(name = "Legend",
+                     values = c("butter2" = "red", "Cutoff" = "green",
+                                "3dB" = "blue"),
+                     labels = c("Respon Filter", "f = 1000 Hz",
+                                "Gain = -3 dB")
+                     ) +
+  theme_linedraw()
+```
+
+
+\newpage
+### 4.1.1 b) Time Domain
+Mengambil data untuk Butterworth orde 2 saja.
+```{r}
+butter2_10Hz <- time_domain_10Hz %>%
+  dplyr::select(TIME, Vin, Butterworth2)
+
+butter2_100Hz <- time_domain_100Hz %>%
+  dplyr::select(TIME, Vin, Butterworth2)
+
+butter2_1000Hz <- time_domain_1000Hz %>%
+  dplyr::select(TIME, Vin, Butterworth2)
+
+butter2_10000Hz <- time_domain_10000Hz %>%
+  dplyr::select(TIME, Vin, Butterworth2)
+```
+
+### F = 10 Hz
+Plot sinyal $V_{input}$ & $V_{out}$ saat $f = 10Hz$
+```{r}
+# Semua sinyal di stack
+plot_all_signal <- 
+  ggplot(butter2_10Hz) +
+    geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+    geom_line(aes(x = TIME * 1000, y = Butterworth2, color = "Vout")) +
+    xlab("Time (ms)") +
+    ylab("Voltage (V)") +
+    scale_color_manual(name = "Legend",
+                       values = c("Vin" = "red", "Vout" = "blue"),
+                       labels = c("Vin", "Vout"))
+
+# Vout only
+plot_vout <-
+  ggplot(butter2_10Hz) +
+    geom_line(aes(x = TIME * 1000, y = Butterworth2), color = "blue") +
+    xlab("Time (ms)") +
+    ylab("Voltage (V)")
+
+plot_all_signal / plot_vout +
+  plot_annotation(title = "Butterworth HPF Orde 2", 
+                  subtitle = "frekuensi input = 10 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+
+Zoom ke $V_{out}$ lebih dekat, namun dengan mengambil data untuk syarat t:
+
+$$
+t > 5ms
+$$
+
+
+```{r}
+# filter untuk t > 5ms
+zoomin <- butter2_10Hz %>%
+  dplyr::filter(TIME * 1000 > 5)
+
+vpeak <- max(zoomin$Butterworth2)
+
+ggplot(zoomin) +
+  geom_line(aes(TIME * 1000, Butterworth2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # Plot info
+  labs(title = "Zoom in Vout",
+       subtitle = "frekuensi input = 10 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+Dari grafik tersebut, dapat terlihat bahwa $V_{PEAK}$ adalah (dalam volt):
+```{r echo=T}
+vpeak
+```
+
+\newpage
+### F = 100 Hz
+Plot sinyal $V_{input}$ & $V_{out}$ saat $f = 100Hz$
+```{r}
+# Semua sinyal di stack
+plot_all_signal <- 
+  ggplot(butter2_100Hz) +
+    geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+    geom_line(aes(x = TIME * 1000, y = Butterworth2, color = "Vout")) +
+    xlab("Time (ms)") +
+    ylab("Voltage (V)") +
+    scale_color_manual(name = "Legend",
+                       values = c("Vin" = "red", "Vout" = "blue"),
+                       labels = c("Vin", "Vout"))
+
+# Vout only
+plot_vout <-
+  ggplot(butter2_100Hz) +
+    geom_line(aes(x = TIME * 1000, y = Butterworth2), color = "blue") +
+    xlab("Time (ms)") +
+    ylab("Voltage (V)")
+
+plot_all_signal / plot_vout +
+  plot_annotation(title = "Butterworth HPF Orde 2", 
+                  subtitle = "frekuensi input = 100 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+
+Zoom ke $V_{out}$ lebih dekat, namun dengan mengambil data untuk $t > 5 ms$,
+agar zoom tidak terpengaruh oleh overshoot yang besar di awal.
+```{r}
+# filter untuk t > 5ms
+zoomin <- butter2_100Hz %>%
+  dplyr::filter(TIME * 1000 > 5)
+
+vpeak <- max(zoomin$Butterworth2)
+
+ggplot(zoomin) +
+  geom_line(aes(TIME * 1000, Butterworth2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # Plot info
+  labs(title = "Zoom in Vout",
+       subtitle = "frekuensi input = 100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+Dari grafik tersebut, dapat terlihat bahwa $V_{PEAK}$ adalah (dalam volt):
+```{r echo=T}
+vpeak
+```
+
+
+\newpage
+### F = 1000 Hz
+Subset data untuk $0ms < t < 25ms$
+```{r}
+butter2_1000Hz <- butter2_1000Hz %>%
+  dplyr::filter(TIME * 1000 < 25)
+```
+
+Plot sinyal $V_{input}$ & $V_{out}$ saat $f = 1000Hz$
+```{r}
+# Semua sinyal di stack
+plot_all_signal <- 
+  ggplot(butter2_1000Hz) +
+    geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+    geom_line(aes(x = TIME * 1000, y = Butterworth2, color = "Vout")) +
+    xlab("Time (ms)") +
+    ylab("Voltage (V)") +
+    scale_color_manual(name = "Legend",
+                       values = c("Vin" = "red", "Vout" = "blue"),
+                       labels = c("Vin", "Vout"))
+
+# Vout only
+plot_vout <-
+  ggplot(butter2_1000Hz) +
+    geom_line(aes(x = TIME * 1000, y = Butterworth2), color = "blue") +
+    xlab("Time (ms)") +
+    ylab("Voltage (V)")
+
+plot_all_signal / plot_vout +
+  plot_annotation(title = "Butterworth HPF Orde 2", 
+                  subtitle = "frekuensi input = 1 kHz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+```{r}
+# filter untuk t > 5ms
+zoomin <- butter2_1000Hz %>%
+  dplyr::filter(TIME * 1000 > 5)
+
+vpeak <- max(zoomin$Butterworth2)
+
+ggplot(zoomin) +
+  geom_line(aes(TIME * 1000, Butterworth2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # Plot info
+  labs(title = "Zoom in Vout",
+       subtitle = "frekuensi input = 1 kHz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+Dari grafik tersebut, dapat terlihat bahwa $V_{PEAK}$ adalah (dalam volt):
+```{r echo=T}
+vpeak
+```
+
+\newpage
+### F = 10000 Hz
+Subset data untuk $0ms < t < 1ms$
+```{r}
+butter2_10000Hz <- butter2_10000Hz %>%
+  dplyr::filter(TIME * 1000 < 1)
+```
+
+Plot sinyal $V_{input}$ & $V_{out}$ saat $f = 10000Hz$
+```{r}
+# Semua sinyal di stack
+ggplot(butter2_10000Hz) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Butterworth2, color = "Vout")) +
+  labs(title = "HPF Butterworth orde 2",
+       subtitle = "Frekuensi input = 10 kHz",
+       y = "Voltage (V)",
+       x = "Time (ms)") +
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  theme_linedraw()
+
+```
+
+```{r}
+# ambil data untuk t < 0.5 ms
+zoomin <- butter2_10000Hz %>%
+  dplyr::filter(TIME * 1000 < 0.50)
+
+vpeak <- max(zoomin$Butterworth2)
+
+ggplot(zoomin) +
+  geom_line(aes(TIME * 1000, Butterworth2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # Plot info
+  labs(title = "Zoom in Vout",
+       subtitle = "frekuensi input = 10 kHz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+Dari grafik tersebut, dapat terlihat bahwa $V_{PEAK}$ adalah (dalam volt):
+```{r echo=T}
+vpeak
+```
+
+
+
+
+
+
+\newpage
+## 4.1.2 Bessel
+Mengambil data untuk respon frekuensi filter tipe Bessel orde 2 saja.
+```{r}
+bessel2_freq <- freq_resp_2 %>%
+  dplyr::select(FREQ, Bessel2)
+```
+
+### 4.1.2 a) Frequency Response
+```{r}
+ggplot(bessel2_freq) +
+  geom_line(aes(x = FREQ, y = Bessel2, color = "resp")) +
+  geom_vline(aes(xintercept = CUTOFF, color = "cutoff"), linetype = 4) +
+  geom_hline(aes(yintercept = MAG_3dB, color = "3dB"), linetype = 4) +
+
+  # Plot info
+  labs(title = "Bessel High Pass Filter Orde 2",
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)") +
+  scale_x_log10() +
+  scale_color_manual(name = "Legend",
+                     values = c("resp" = "red", "cutoff" = "blue", "3dB" = "green"), 
+                     labels = c("Freq Response", "F = 1000 Hz", "-3dB point")) +
+  theme_linedraw()
+```
+
+
+### 4.1.2 b) Time Domain
+Subset data untuk Bessel filter saja.
+```{r}
+bessel2_10Hz <- time_domain_10Hz %>%
+  dplyr::select(TIME, Vin, Bessel2)
+```
+
+### F = 10 Hz
+```{r}
+# Plot Vin & Vout di stack
+p1 <-
+ggplot(bessel2_10Hz) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2, color = "Vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(bessel2_10Hz) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2), color = "blue")
+
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Bessel HPF @F = 10 Hz",
+                  subtitle = "Orde 2") &
+  xlab("Time (ms)") &
+  ylab("Voltage (V)") &
+  theme_linedraw()
+```
+Untuk mendapatkan peak, maka sebaiknya di subset dahulu untuk $t > 5ms$ (perkiraan)
+
+```{r}
+bessel2_10Hz <- bessel2_10Hz %>%
+  dplyr::filter( TIME * 1000 > 5)
+
+vpeak <- max(bessel2_10Hz$Bessel2)
+```
+
+```{r}
+ggplot(bessel2_10Hz) +
+  geom_line(aes(TIME * 1000, Bessel2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot informations
+  labs(title = "Zoom In Vout Bessel HPF Orde 2",
+       subtitle = "F = 10 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  scale_color_manual() +
+  theme_linedraw()
+```
+
+Dari grafik tersebut, kurang lebih nilai $V_{peak}$ output adalah:
+```{r echo=T}
+vpeak
+```
+
+
+
+\newpage
+### F = 100 Hz
+Subset data untuk Bessel filter saja.
+```{r}
+bessel2_100Hz <- time_domain_100Hz %>%
+  dplyr::select(TIME, Vin, Bessel2)
+```
+
+```{r}
+# Plot Vin & Vout di stack
+p1 <-
+ggplot(bessel2_100Hz) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2, color = "Vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(bessel2_100Hz) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2), color = "blue")
+
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Bessel HPF @F = 100 Hz",
+                  subtitle = "Orde 2") &
+  xlab("Time (ms)") &
+  ylab("Voltage (V)") &
+  theme_linedraw()
+```
+Untuk mendapatkan peak, maka sebaiknya di subset dahulu untuk $t > 5ms$ (perkiraan)
+
+```{r}
+bessel2_100Hz <- bessel2_100Hz %>%
+  dplyr::filter( TIME * 1000 > 5)
+
+vpeak <- max(bessel2_100Hz$Bessel2)
+```
+
+```{r}
+ggplot(bessel2_100Hz) +
+  geom_line(aes(TIME * 1000, Bessel2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot information
+  labs(title = "Zoom In Vout Bessel HPF Orde 2",
+       subtitle = "F = 100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+Dari grafik tersebut, kurang lebih nilai $V_{peak}$ output adalah:
+```{r echo=T}
+vpeak
+```
+
+
+
+\newpage
+### F = 1000 Hz
+Subset data untuk Bessel filter saja, lalu mengambil data untuk rentang t:
+$$
+0 \le t \le 10ms
+$$
+```{r}
+bessel2_1000Hz <- time_domain_1000Hz %>%
+  dplyr::select(TIME, Vin, Bessel2) %>%
+  dplyr::filter(TIME * 1000 <= 10)
+```
+
+```{r}
+# Plot Vin & Vout di stack
+p1 <-
+ggplot(bessel2_1000Hz) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2, color = "Vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(bessel2_1000Hz) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2), color = "blue")
+
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Bessel HPF @F = 1000 Hz",
+                  subtitle = "Orde 2") &
+  xlab("Time (ms)") &
+  ylab("Voltage (V)") &
+  theme_linedraw()
+```
+Untuk mendapatkan peak, maka sebaiknya di subset dahulu untuk $t > 2.5ms$ (perkiraan)
+
+```{r}
+bessel2_1000Hz <- bessel2_1000Hz %>%
+  dplyr::filter( TIME * 1000 > 2.5)
+
+vpeak <- max(bessel2_1000Hz$Bessel2)
+```
+
+```{r}
+ggplot(bessel2_1000Hz) +
+  geom_line(aes(TIME * 1000, Bessel2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot informations
+  labs(title = "Zoom In Vout Bessel HPF Orde 2",
+       subtitle = "F = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+Dari grafik tersebut, kurang lebih nilai $V_{peak}$ output adalah:
+```{r echo=T}
+vpeak
+```
+
+
+
+\newpage
+### F = 10000 Hz
+Subset data untuk Bessel filter saja, lalu mengambil data untuk rentang t:
+$$
+0 \le t \le 1ms
+$$
+
+```{r}
+bessel2_10000Hz <- time_domain_10000Hz %>%
+  dplyr::select(TIME, Vin, Bessel2) %>%
+  dplyr::filter(TIME * 1000 <= 1)
+```
+
+```{r}
+# Plot Vin & Vout di stack
+p1 <-
+ggplot(bessel2_10000Hz) +
+  geom_line(aes(x = TIME * 1000, y = Vin, color = "Vin")) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2, color = "Vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("Vin" = "red", "Vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(bessel2_10000Hz) +
+  geom_line(aes(x = TIME * 1000, y = Bessel2), color = "blue")
+
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Bessel HPF @F = 10000 Hz",
+                  subtitle = "Orde 2") &
+  xlab("Time (ms)") &
+  ylab("Voltage (V)") &
+  theme_linedraw()
+```
+Untuk mendapatkan peak, maka sebaiknya di subset dahulu untuk $t > 0.25ms$ (perkiraan)
+
+```{r}
+bessel2_10000Hz <- bessel2_10000Hz %>%
+  dplyr::filter( TIME * 1000 > 0.25)
+
+vpeak <- max(bessel2_10000Hz$Bessel2)
+```
+
+```{r}
+ggplot(bessel2_10000Hz) +
+  geom_line(aes(TIME * 1000, Bessel2), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot informations
+  labs(title = "Zoom In Vout Bessel HPF Orde 2",
+       subtitle = "F = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+Dari grafik tersebut, kurang lebih nilai $V_{peak}$ output adalah:
+```{r echo=T}
+vpeak
+```
+
+\newpage
+## 4.1.3 Chebychev
+### 4.1.3 a) Frequency Response
+Mengambil data untuk Chebychev saja.
+```{r}
+cheby2_freq <- freq_resp %>%
+  dplyr::select(FREQ, Chebychev2)
+```
+
+Plot respon frekuensi, juga disertakan garis bantu untuk cutoff frequency.
+```{r}
+cheby2_freq_plot <- 
+ggplot(cheby2_freq) +
+  geom_line(aes(FREQ, Chebychev2), color = "red") +
+  geom_vline(xintercept = CUTOFF, color = "blue", linetype = 4) +
+  geom_hline(yintercept = MAG_3dB, color = "blue", linetype = 4) +
+  
+  # Plot plot parameters
+  labs(title = "HPF Filter Chebychev Orde 2", 
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)") +
+  scale_x_log10() +
+  theme_linedraw()
+
+cheby2_freq_plot
+```
+
+### Max Ripple 
+Ripple maksimum pada Chebychev didapatkan melalui fungsi `.max()` dari kolom
+`Chebychev2`. Dan frekuensi saat ripple didapat dengan melakukan `filter()` data,
+dengan syarat $G_{dB} = ripple$, lalu mengambil kolom `FREQ` saja.
+```{r}
+ripple <- max(cheby2_freq$Chebychev2)
+freq_at_ripple <- cheby2_freq %>%
+  dplyr::filter(Chebychev2 == ripple) %>%
+  dplyr::select(FREQ) %>%
+  as.numeric()
+
+ripple
+freq_at_ripple
+```
+
+```{r}
+cheby2_freq_plot +
+  geom_point(aes(x = freq_at_ripple, y = ripple), color = "black", 
+             shape = 4, size = 5) +
+  annotate("text", x = freq_at_ripple + 1200, y = ripple + 8,
+           label = "(1584.893, 2.96181)") +
+  labs(title = "Lokasi peak ripple Chebychev HPF orde 2")
+```
+
+
+
+\newpage
+### 4.1.3 b) Time Domain
+
+
+### F = 10 Hz
+Subset data untuk time domain saja:
+```{r}
+cheby2_10Hz <- time_domain_10Hz %>%
+  dplyr::select(TIME, Vin, Chebychev2)
+```
+
+Plot perbandingan input dan output.
+```{r}
+p1 <- 
+ggplot(cheby2_10Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev2, color = "vout")) +
+  
+  # plot information
+  labs(x = "Time (ms)",
+       y = "Voltage (V)") +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  theme_linedraw()
+
+
+p2 <- 
+ggplot(cheby2_10Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  
+  # plot information
+  labs(x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev 3-dB HPF orde 2",
+                  subtitle = "Frekuensi input = 10 Hz")
+```
+
+Zoom in ke Vout saja, dengan melakukan subset data untuk syarat t:
+
+$$
+t > 5ms
+$$
+
+
+```{r}
+cheby2_10Hz %>%
+  dplyr::filter(TIME * 1000 > 5) -> cheby2_10Hz
+```
+
+
+Untuk mendapatkan $V_{peak}$ maka menggunakan `max()`
+```{r}
+vpeak <- max(cheby2_10Hz$Chebychev2)
+vpeak
+```
+
+
+```{r}
+ggplot(cheby2_10Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  geom_hline(aes(yintercept = vpeak), color = "black", linetype = 4) +
+  
+  # plot information
+  labs(title = "Vout Chebychev HPF orde 2",
+       subtitle = "F = 10 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+\newpage
+### F = 100 Hz
+Subset data untuk time domain saja:
+```{r}
+cheby2_100Hz <- time_domain_100Hz %>%
+  dplyr::select(TIME, Vin, Chebychev2)
+```
+
+Plot perbandingan input dan output.
+```{r}
+p1 <- 
+ggplot(cheby2_100Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev2, color = "vout")) +
+  
+  # plot information
+  labs(x = "Time (ms)",
+       y = "Voltage (V)") +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  theme_linedraw()
+
+
+p2 <- 
+ggplot(cheby2_100Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  
+  # plot information
+  labs(x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev 3-dB HPF orde 2",
+                  subtitle = "Frekuensi input = 100 Hz")
+```
+
+Zoom in ke Vout saja, dengan melakukan subset data untuk syarat t:
+
+$$
+t > 5ms
+$$
+
+
+```{r}
+cheby2_100Hz %>%
+  dplyr::filter(TIME * 1000 > 5) -> cheby2_100Hz
+```
+
+
+Untuk mendapatkan $V_{peak}$ maka menggunakan `max()`
+```{r}
+vpeak <- max(cheby2_100Hz$Chebychev2)
+vpeak
+```
+
+
+```{r}
+ggplot(cheby2_100Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  geom_hline(aes(yintercept = vpeak), color = "black", linetype = 4) +
+  
+  # plot information
+  labs(title = "Vout Chebychev HPF orde 2",
+       subtitle = "F = 100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+\newpage
+### F = 1000 Hz
+Subset data untuk time domain saja, dengan syarat t:
+$$
+t < 10 ms
+$$
+```{r}
+cheby2_1000Hz <- time_domain_1000Hz %>%
+  dplyr::select(TIME, Vin, Chebychev2) %>%
+  dplyr::filter(TIME * 1000 < 10)
+```
+
+Plot perbandingan input dan output.
+```{r}
+p1 <- 
+ggplot(cheby2_1000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev2, color = "vout")) +
+  
+  # plot information
+  labs(x = "Time (ms)",
+       y = "Voltage (V)") +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  theme_linedraw()
+
+
+p2 <- 
+ggplot(cheby2_1000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  
+  # plot information
+  labs(x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev 3-dB HPF orde 2",
+                  subtitle = "Frekuensi input = 1000 Hz")
+```
+
+Zoom in ke Vout saja, dengan melakukan subset data untuk syarat t:
+$$
+t > 1ms
+$$
+```{r}
+cheby2_1000Hz %>%
+  dplyr::filter(TIME * 1000 > 1) -> cheby2_1000Hz
+```
+
+
+Untuk mendapatkan $V_{peak}$ maka menggunakan `max()`
+```{r}
+vpeak <- max(cheby2_1000Hz$Chebychev2)
+vpeak
+```
+
+
+```{r}
+ggplot(cheby2_1000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  geom_hline(aes(yintercept = vpeak), color = "black", linetype = 4) +
+  
+  # plot information
+  labs(title = "Vout Chebychev HPF orde 2",
+       subtitle = "F = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+
+\newpage
+### F = 10000 Hz
+Subset data untuk time domain saja, dengan syarat t:
+$$
+t < 2 ms
+$$
+```{r}
+cheby2_10000Hz <- time_domain_10000Hz %>%
+  dplyr::select(TIME, Vin, Chebychev2) %>%
+  dplyr::filter(TIME * 1000 < 2)
+```
+
+Plot perbandingan input dan output.
+```{r}
+p1 <- 
+ggplot(cheby2_10000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev2, color = "vout")) +
+  
+  # plot information
+  labs(x = "",
+       y = "Voltage (V)") +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  theme_linedraw()
+
+
+p2 <- 
+ggplot(cheby2_10000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  
+  # plot information
+  labs(x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev 3-dB HPF orde 2",
+                  subtitle = "Frekuensi input = 10 kHz")
+```
+
+Zoom in ke Vout saja, dengan melakukan subset data untuk syarat t:
+$$
+t > 1ms
+$$
+```{r}
+cheby2_10000Hz %>%
+  dplyr::filter(TIME * 1000 > 1) -> cheby2_10000Hz
+```
+
+
+Untuk mendapatkan $V_{peak}$ maka menggunakan `max()`
+```{r}
+vpeak <- max(cheby2_10000Hz$Chebychev2)
+vpeak
+```
+
+
+```{r}
+ggplot(cheby2_10000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev2), color = "blue") +
+  geom_hline(aes(yintercept = vpeak), color = "black", linetype = 4) +
+  
+  # plot information
+  labs(title = "Vout Chebychev HPF orde 2",
+       subtitle = "F = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+
+
+\newpage
+## 4.1.4 Perbandingan Respon Frekuensi
+Plot frequency response ketiga filter orde 2, sumbu-x logaritmis, juga
+disertakan garis bantu untuk frekuensi cutoff & lokasi gain 3 dB.
+```{r}
+ggplot(freq_resp_2) +
+  scale_x_log10() +
+  geom_line(aes(FREQ, Butterworth2, color = "Butterworth")) +
+  geom_line(aes(FREQ, Bessel2, color = "Bessel")) +
+  geom_line(aes(FREQ, Chebychev2, color = "Chebychev 3-dB")) +
+  
+  # Garis bantu
+  geom_hline(yintercept = -3, color = "blue", linetype = 4) +
+  geom_vline(xintercept = 1000, color = "blue", linetype = 4) +
+  
+  # plot information
+  labs(title = "Perbandingan HPF orde 2",
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)")
+```
+
+
+
+\newpage
+# 4.2 Filter Orde 3
+**Mengambil data filter orde 3**.
+```{r}
+freq_resp_3 <- freq_resp %>%
+  dplyr::select(FREQ, Butterworth3, Bessel3, Chebychev3)
+```
+
+## 4.2.1 Butterworth
+### 4.2.1 a) Frequency Response
+```{r}
+freq_resp_3 %>%
+  
+ggplot() +
+  scale_x_log10() +
+  geom_line(aes(FREQ, Butterworth3), color = "red") +
+  geom_hline(yintercept = -3, color = "blue", linetype = 4) +
+  geom_vline(xintercept = 1000, color = "blue", linetype = 4) +
+  
+  # plot information
+  labs(title = "Butterworth HPF orde 3",
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)") +
+  theme_linedraw() 
+```
+
+\newpage
+### 4.2.1 b) Time Domain
+### F = 10 Hz
+Mengambil data untuk 10 Hz.
+```{r}
+butter3_10Hz <- time_domain_10Hz %>%
+  dplyr::select(TIME, Vin, Butterworth3)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(butter3_10Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Butterworth3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(butter3_10Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Butterworth Orde 3",
+                  subtitle = "Frekuensi input = 10 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 25ms
+$$
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+butter3_10Hz <- butter3_10Hz %>%
+  dplyr::filter(TIME * 1000 > 25)
+
+vpeak <- max(butter3_10Hz$Butterworth3)
+vpeak
+
+ggplot(butter3_10Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Butterworth HPF Orde 3",
+       subtitle = "Frekuensi input = 10 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+\newpage
+### F = 100 Hz
+Mengambil data untuk 100 Hz.
+```{r}
+butter3_100Hz <- time_domain_100Hz %>%
+  dplyr::select(TIME, Vin, Butterworth3)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(butter3_100Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Butterworth3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(butter3_100Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Butterworth Orde 3",
+                  subtitle = "Frekuensi input = 100 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 25ms
+$$
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+butter3_100Hz <- butter3_100Hz %>%
+  dplyr::filter(TIME * 1000 > 25)
+
+vpeak <- max(butter3_100Hz$Butterworth3)
+vpeak
+
+ggplot(butter3_100Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Butterworth HPF Orde 3",
+       subtitle = "Frekuensi input = 100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+\newpage
+### F = 1000 Hz
+Mengambil data untuk 100 Hz, dengan waktu t:
+$$
+t < 10ms
+$$
+
+```{r}
+butter3_1000Hz <- time_domain_1000Hz %>%
+  dplyr::select(TIME, Vin, Butterworth3) %>%
+  dplyr::filter(TIME * 1000 < 10)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(butter3_1000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Butterworth3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(butter3_1000Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Butterworth Orde 3",
+                  subtitle = "Frekuensi input = 1000 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 2.5ms
+$$
+
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+butter3_1000Hz <- butter3_1000Hz %>%
+  dplyr::filter(TIME * 1000 > 2.5)
+
+vpeak <- max(butter3_1000Hz$Butterworth3)
+vpeak
+
+ggplot(butter3_1000Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Butterworth HPF Orde 3",
+       subtitle = "Frekuensi input = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+
+\newpage
+### F = 10000 Hz
+Mengambil data untuk 100 Hz, dengan waktu t:
+$$
+t < 2ms
+$$
+
+```{r}
+butter3_10000Hz <- time_domain_10000Hz %>%
+  dplyr::select(TIME, Vin, Butterworth3) %>%
+  dplyr::filter(TIME * 1000 < 2)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(butter3_10000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Butterworth3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(butter3_10000Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Butterworth Orde 3",
+                  subtitle = "Frekuensi input = 10000 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 1ms
+$$
+
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+butter3_10000Hz <- butter3_10000Hz %>%
+  dplyr::filter(TIME * 1000 > 1)
+
+vpeak <- max(butter3_10000Hz$Butterworth3)
+vpeak
+
+ggplot(butter3_10000Hz) +
+  geom_line(aes(TIME * 1000, Butterworth3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Butterworth HPF Orde 3",
+       subtitle = "Frekuensi input = 10000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+\newpage
+## 4.2.2 Bessel
+
+### 4.2.2 a) Frequency Response
+Mengambil data frequency response dari filter Bessel.
+
+```{r}
+bessel3_freq <- freq_resp %>%
+  dplyr::select(FREQ, Bessel3)
+```
+
+Plot respon frekuensi.
+```{r}
+ggplot(bessel3_freq) +
+  scale_x_log10() +
+  geom_line(aes(FREQ, Bessel3), color = "red") +
+  geom_hline(yintercept = -3, color = "blue", linetype = 4) +
+  geom_vline(xintercept = 1000, color = "blue", linetype = 4) +
+  
+  # plot information
+  labs(title = "Bessel HPF Orde 3",
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)") +
+  theme_linedraw()
+```
+
+\newpage
+### 4.2.2 b) Time Domain
+### F = 10 Hz
+Mengambil data untuk 10 Hz.
+```{r}
+bessel3_10Hz <- time_domain_10Hz %>%
+  dplyr::select(TIME, Vin, Bessel3)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(bessel3_10Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Bessel3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(bessel3_10Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Bessel Orde 3",
+                  subtitle = "Frekuensi input = 10 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 25ms
+$$
+
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+bessel3_10Hz <- bessel3_10Hz %>%
+  dplyr::filter(TIME * 1000 > 25)
+
+vpeak <- max(bessel3_10Hz$Bessel3)
+vpeak
+
+ggplot(bessel3_10Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Bessel HPF Orde 3",
+       subtitle = "Frekuensi input = 10 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+\newpage
+### F = 100 Hz
+Mengambil data untuk 100 Hz.
+```{r}
+bessel3_100Hz <- time_domain_100Hz %>%
+  dplyr::select(TIME, Vin, Bessel3)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(bessel3_100Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Bessel3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(bessel3_100Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Bessel Orde 3",
+                  subtitle = "Frekuensi input = 100 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 25ms
+$$
+
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+bessel3_100Hz <- bessel3_100Hz %>%
+  dplyr::filter(TIME * 1000 > 25)
+
+vpeak <- max(bessel3_100Hz$Bessel3)
+vpeak
+
+ggplot(bessel3_100Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Bessel HPF Orde 3",
+       subtitle = "Frekuensi input = 100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+
+
+\newpage
+### F = 1000 Hz
+Mengambil data untuk 1000 Hz, dan hanya mengambil untuk t:
+$$
+t < 10ms
+$$
+
+```{r}
+bessel3_1000Hz <- time_domain_1000Hz %>%
+  dplyr::select(TIME, Vin, Bessel3) %>%
+  dplyr::filter(TIME * 1000 < 10)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(bessel3_1000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Bessel3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(bessel3_1000Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Bessel Orde 3",
+                  subtitle = "Frekuensi input = 1000 Hz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 2.5ms
+$$
+
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+bessel3_1000Hz <- bessel3_1000Hz %>%
+  dplyr::filter(TIME * 1000 > 2.5)
+
+vpeak <- max(bessel3_1000Hz$Bessel3)
+vpeak
+
+ggplot(bessel3_1000Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Bessel HPF Orde 3",
+       subtitle = "Frekuensi input = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+\newpage
+### F = 10000 Hz
+Mengambil data untuk 10000 Hz, dan hanya mengambil untuk t:
+$$
+t < 2ms
+$$
+
+```{r}
+bessel3_10000Hz <- time_domain_10000Hz %>%
+  dplyr::select(TIME, Vin, Bessel3) %>%
+  dplyr::filter(TIME * 1000 < 2)
+```
+
+Plot data time domain untuk 10 Hz
+```{r}
+# output & input di stack
+p1 <- ggplot(bessel3_10000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Bessel3, color = "vout")) +
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout")) +
+  xlab("") +
+  ylab("Voltage (V)")
+  
+p2 <- ggplot(bessel3_10000Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  xlab("Time (ms)") +
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_annotation(title = "HPF Bessel Orde 3",
+                  subtitle = "Frekuensi input = 10 kHz") +
+  plot_layout(guides = "collect") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan melakukan subset data untuk syarat t:
+$$
+t > 0.5ms
+$$
+
+Dan sekaligus mendapatkan nilai $V_{peak}$:
+```{r}
+bessel3_10000Hz <- bessel3_10000Hz %>%
+  dplyr::filter(TIME * 1000 > 0.5)
+
+vpeak <- max(bessel3_10000Hz$Bessel3)
+vpeak
+
+ggplot(bessel3_10000Hz) +
+  geom_line(aes(TIME * 1000, Bessel3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  labs(title = "Zoom in Vout Bessel HPF Orde 3",
+       subtitle = "Frekuensi input = 10 kHz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+\newpage
+## 4.2.3 Chebychev
+### 4.2.2 a) Frequency Response
+Mengambil data respon frekuensi untuk filter Chebychev.
+
+```{r}
+cheby3_freq <- freq_resp %>%
+  dplyr::select(FREQ, Chebychev3)
+```
+
+Plot untuk respon frekuensi.
+
+```{r}
+cheby3_plot <- 
+ggplot(cheby3_freq) +
+  scale_x_log10() +
+  geom_line(aes(FREQ, Chebychev3), color = "blue") +
+  geom_hline(yintercept = -3, color = "red", linetype = 4) +
+  geom_vline(xintercept = 1000, color = "red", linetype = 4) +
+  
+  # plot information
+  labs(title = "Chebychev HPF Orde 3",
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)") +
+  theme_linedraw()
+
+cheby3_plot
+```
+
+### Max Ripple
+Karena max ripple sepertinya bersifat menuju Gain (dB) -3dB , maka fungsi yang digunakan adalah `min()`, dan diaplikasikan untuk mencari magnitude dengan lokasi frekuensi:
+
+$$
+f > 1100Hz
+$$
+Menggunakan 1100 Hz agar daerah dekat cutoff (-3 dB) tidak ikut di _scan_ 
+oleh fungsi `min()`.
+
+```{r}
+ripple <- cheby3_freq %>%
+  dplyr::filter(FREQ > 1100) %>%
+  min() 
+
+freq_at_ripple <- cheby3_freq %>%
+  dplyr::filter(Chebychev3 == ripple) %>%
+  dplyr::select(FREQ) %>%
+  as.numeric()
+
+ripple
+freq_at_ripple
+
+# plot ulang dengan lokasi ripple
+cheby3_plot +
+  geom_point(aes(freq_at_ripple, ripple),
+             shape = 4, size = 5, color = "black") +
+  
+  annotate("text", x = freq_at_ripple + 1000, y = ripple + 10,
+           label = paste(freq_at_ripple, ripple, sep = ", "))
+```
+
+
+\newpage
+### 4.2.2 b) Time Domain
+
+
+### F = 10 Hz
+Mengambil data untuk filter Chebychev orde 3
+
+```{r}
+cheby3_10Hz <- time_domain_10Hz %>%
+  dplyr::select(TIME, Vin, Chebychev3)
+```
+
+Plot time domain.
+
+```{r}
+# Plot Vout & Vin di stack
+p1 <-
+ggplot(cheby3_10Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev3, color = "vout")) +
+  xlab("") +
+  ylab("Voltage (V)") +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(cheby3_10Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  xlab("Time (ms)") + 
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev HPF Orde 3",
+                  subtitle = "Frekuensi input = 10 Hz") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan cara melakukan subset data untuk t:
+
+$$
+t > 25 ms
+$$
+Sekaligus mendapatkan $V_{peak}$:
+
+```{r}
+cheby3_10Hz <- cheby3_10Hz %>%
+  dplyr::filter(TIME * 1000 > 25)
+
+vpeak <- max(cheby3_10Hz$Chebychev3)
+vpeak
+
+ggplot(cheby3_10Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot information
+  labs(title = "Zoom in Vout Chebychev HPF Orde 3",
+       subtitle = "Frekuensi input = 10 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+\newpage
+### F = 100 Hz
+Mengambil data untuk filter Chebychev orde 3.
+
+```{r}
+cheby3_100Hz <- time_domain_100Hz %>%
+  dplyr::select(TIME, Vin, Chebychev3)
+```
+
+Plot time domain.
+
+```{r}
+# Plot Vout & Vin di stack
+p1 <-
+ggplot(cheby3_100Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev3, color = "vout")) +
+  xlab("") +
+  ylab("Voltage (V)") +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(cheby3_100Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  xlab("Time (ms)") + 
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev HPF Orde 3",
+                  subtitle = "Frekuensi input = 100 Hz") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan cara melakukan subset data untuk t:
+
+$$
+t > 25 ms
+$$
+Sekaligus mendapatkan $V_{peak}$:
+
+```{r}
+cheby3_100Hz <- cheby3_100Hz %>%
+  dplyr::filter(TIME * 1000 > 25)
+
+vpeak <- max(cheby3_100Hz$Chebychev3)
+vpeak
+
+ggplot(cheby3_100Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot information
+  labs(title = "Zoom in Vout Chebychev HPF Orde 3",
+       subtitle = "Frekuensi input = 100 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+\newpage
+### F = 1000 Hz
+Mengambil data untuk filter Chebychev orde 3, dengan syarat t:
+
+$$
+t < 10 ms
+$$
+
+```{r}
+cheby3_1000Hz <- time_domain_1000Hz %>%
+  dplyr::select(TIME, Vin, Chebychev3) %>%
+  dplyr::filter(TIME * 1000 < 10)
+```
+
+Plot time domain.
+
+```{r}
+# Plot Vout & Vin di stack
+p1 <-
+ggplot(cheby3_1000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev3, color = "vout")) +
+  xlab("") +
+  ylab("Voltage (V)") +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(cheby3_1000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  xlab("Time (ms)") + 
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev HPF Orde 3",
+                  subtitle = "Frekuensi input = 1000 Hz") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan cara melakukan subset data untuk t:
+
+$$
+t > 2.5 ms
+$$
+Sekaligus mendapatkan $V_{peak}$:
+
+```{r}
+cheby3_1000Hz <- cheby3_1000Hz %>%
+  dplyr::filter(TIME * 1000 > 2.5)
+
+vpeak <- max(cheby3_1000Hz$Chebychev3)
+vpeak
+
+ggplot(cheby3_1000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot information
+  labs(title = "Zoom in Vout Chebychev HPF Orde 3",
+       subtitle = "Frekuensi input = 1000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+
+
+\newpage
+### F = 10000 Hz
+Mengambil data untuk filter Chebychev orde 3, dengan syarat t:
+
+$$
+t < 5 ms
+$$
+
+```{r}
+cheby3_10000Hz <- time_domain_10000Hz %>%
+  dplyr::select(TIME, Vin, Chebychev3) %>%
+  dplyr::filter(TIME * 1000 < 5)
+```
+
+Plot time domain.
+
+```{r}
+# Plot Vout & Vin di stack
+p1 <-
+ggplot(cheby3_10000Hz) +
+  geom_line(aes(TIME * 1000, Vin, color = "vin")) +
+  geom_line(aes(TIME * 1000, Chebychev3, color = "vout")) +
+  xlab("") +
+  ylab("Voltage (V)") +
+  
+  scale_color_manual(name = "Legend",
+                     values = c("vin" = "red", "vout" = "blue"),
+                     labels = c("Vin", "Vout"))
+
+# Plot Vout saja
+p2 <-
+ggplot(cheby3_10000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  xlab("Time (ms)") + 
+  ylab("Voltage (V)")
+
+p1 / p2 +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = "Chebychev HPF Orde 3",
+                  subtitle = "Frekuensi input = 10000 Hz") &
+  theme_linedraw()
+```
+
+Zoom in ke $V_{out}$ dengan cara melakukan subset data untuk t:
+
+$$
+t > 1 ms
+$$
+Sekaligus mendapatkan $V_{peak}$:
+
+```{r}
+cheby3_10000Hz <- cheby3_10000Hz %>%
+  dplyr::filter(TIME * 1000 > 1)
+
+vpeak <- max(cheby3_10000Hz$Chebychev3)
+vpeak
+
+ggplot(cheby3_10000Hz) +
+  geom_line(aes(TIME * 1000, Chebychev3), color = "blue") +
+  geom_hline(yintercept = vpeak, color = "red", linetype = 4) +
+  
+  # plot information
+  labs(title = "Zoom in Vout Chebychev HPF Orde 3",
+       subtitle = "Frekuensi input = 10000 Hz",
+       x = "Time (ms)",
+       y = "Voltage (V)") +
+  theme_linedraw()
+```
+
+## 4.2.4 Perbandingan Respon Frekuensi
+Plot frequency response ketiga filter orde 3, sumbu-x logaritmis, juga
+disertakan garis bantu untuk frekuensi cutoff & lokasi gain 3 dB.
+```{r}
+ggplot(freq_resp) +
+  scale_x_log10() +
+  geom_line(aes(FREQ, Butterworth3, color = "Butterworth")) +
+  geom_line(aes(FREQ, Bessel3, color = "Bessel")) +
+  geom_line(aes(FREQ, Chebychev3, color = "Chebychev 3-dB")) +
+  
+  # Garis bantu
+  geom_hline(yintercept = -3, color = "blue", linetype = 4) +
+  geom_vline(xintercept = 1000, color = "blue", linetype = 4) +
+  
+  # plot information
+  labs(title = "Perbandingan HPF orde 3",
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)")
+```
+
+
+# Perbandingan Semua Filter
+```{r}
+ggplot(freq_resp) +
+  scale_x_log10() +
+  geom_line(aes(FREQ, Butterworth2, color = "Butterworth Orde 2")) +
+  geom_line(aes(FREQ, Bessel2, color = "Bessel Orde 2")) +
+  geom_line(aes(FREQ, Chebychev2, color = "Chebychev 3-dB Orde 2")) +
+  geom_line(aes(FREQ, Butterworth3, color = "Butterworth Orde 3")) +
+  geom_line(aes(FREQ, Bessel3, color = "Bessel Orde 3")) +
+  geom_line(aes(FREQ, Chebychev3, color = "Chebychev 3-dB Orde 3")) +
+  
+  # Garis bantu frekuensi cutoff & -3dB point
+  geom_hline(yintercept = -3, color = "red", linetype = 4) +
+  geom_vline(xintercept = 1000, color = "red", linetype = 4) +
+  
+  # plot information
+  labs(title = "Perbandingan HPF",
+       subtitle = "Cutoff = 1000 Hz",
+       x = "Frequency (Hz)",
+       y = "Gain (dB)")
+``` 

@@ -1,0 +1,2 @@
+"0","cheby2_freq <- freq_resp %>%"
+"0","  dplyr::select(FREQ, Chebychev2)"

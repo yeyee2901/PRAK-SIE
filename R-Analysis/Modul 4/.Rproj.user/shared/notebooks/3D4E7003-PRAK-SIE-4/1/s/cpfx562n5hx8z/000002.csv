@@ -1,0 +1,3 @@
+"0","butter3_10000Hz <- time_domain_10000Hz %>%"
+"0","  dplyr::select(TIME, Vin, Butterworth3) %>%"
+"0","  dplyr::filter(TIME * 1000 < 2)"

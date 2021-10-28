@@ -1,0 +1,2 @@
+"0","butter2_1000Hz <- butter2_1000Hz %>%"
+"0","  dplyr::filter(TIME * 1000 < 25)"

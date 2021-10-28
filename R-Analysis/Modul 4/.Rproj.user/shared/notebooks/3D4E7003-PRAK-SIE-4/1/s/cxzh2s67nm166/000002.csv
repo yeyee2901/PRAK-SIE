@@ -1,0 +1,2 @@
+"0","freq_resp_2 <- freq_resp %>%"
+"0","  dplyr::select(FREQ, Butterworth2, Bessel2, Chebychev2)"
